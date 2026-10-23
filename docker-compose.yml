@@ -1,0 +1,103 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: thumbnail-generator-redis
+    # Bind to localhost only — not exposed on all interfaces.
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-changeme_redis}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme_redis}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: thumbnail-generator-postgres
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-thumbnail}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-thumbnail_generator}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-thumbnail} -d ${POSTGRES_DB:-thumbnail_generator}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Optional: run generator workers as scalable containers
+  generator:
+    build:
+      context: .
+      args:
+        SERVICE: generator
+    profiles: ["full"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_redis}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-thumbnail}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-thumbnail_generator}
+      THUMBNAIL_STORAGE_PATH: /data/thumbnails
+      VIDEO_SCAN_PATH: /data/videos
+      LOG_LEVEL: info
+      WORKER_CONCURRENCY: 2
+    volumes:
+      - ./data/videos:/data/videos:ro
+      - ./data/thumbnails:/data/thumbnails
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    deploy:
+      replicas: 1
+    restart: unless-stopped
+
+  scanner:
+    build:
+      context: .
+      args:
+        SERVICE: scanner
+    profiles: ["full"]
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme_redis}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-thumbnail}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-thumbnail_generator}
+      THUMBNAIL_STORAGE_PATH: /data/thumbnails
+      VIDEO_SCAN_PATH: /data/videos
+      LOG_LEVEL: info
+      SCAN_INTERVAL_MS: 30000
+      REQUEUE_FAILED_JOBS: "false"
+    volumes:
+      - ./data/videos:/data/videos:ro
+      - ./data/thumbnails:/data/thumbnails:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  postgres-data:

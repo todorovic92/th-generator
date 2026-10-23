@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.local
+.DS_Store
+data/videos/*
+!data/videos/.gitkeep
+data/thumbnails/*
+!data/thumbnails/.gitkeep
+*.tsbuildinfo
+.turbo/

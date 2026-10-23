@@ -1,0 +1,55 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": ["tsconfig.base.json", ".nvmrc", "eslint.config.mjs"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "tsconfig.tsbuildinfo"]
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": [],
+      "env": [
+        "CI",
+        "RUN_INTEGRATION",
+        "REDIS_HOST",
+        "REDIS_PORT",
+        "REDIS_PASSWORD",
+        "POSTGRES_HOST",
+        "POSTGRES_PORT",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+        "DATABASE_URL"
+      ]
+    },
+    "test:coverage": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "REDIS_*",
+        "POSTGRES_*",
+        "DATABASE_URL",
+        "LOG_LEVEL",
+        "VIDEO_SCAN_PATH",
+        "SCAN_INTERVAL_MS",
+        "REQUEUE_FAILED_JOBS",
+        "THUMBNAIL_STORAGE_PATH",
+        "WORKER_CONCURRENCY",
+        "FFMPEG_TIMEOUT_MS",
+        "WORKER_LOCK_DURATION_MS"
+      ]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "thumbnail-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scalable thumbnail generation service monorepo",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "lint": "turbo run lint",
+    "format": "prettier --write packages services README.md",
+    "scanner": "turbo run build --filter=@thumbnail-generator/scanner --output-logs=errors-only && npm run start -w @thumbnail-generator/scanner",
+    "generator": "turbo run build --filter=@thumbnail-generator/generator --output-logs=errors-only && npm run start -w @thumbnail-generator/generator",
+    "dev:scanner": "turbo run dev --filter=@thumbnail-generator/scanner",
+    "dev:generator": "turbo run dev --filter=@thumbnail-generator/generator",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "clean": "turbo run clean && rm -rf node_modules .turbo"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.9.1",
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
+    "tsx": "4.20.6",
+    "turbo": "2.11.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "3.2.4"
+  }
+}

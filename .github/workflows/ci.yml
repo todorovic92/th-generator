@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: thumbnail
+          POSTGRES_PASSWORD: changeme_postgres
+          POSTGRES_DB: thumbnail_generator
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U thumbnail -d thumbnail_generator"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: thumbnail
+      POSTGRES_PASSWORD: changeme_postgres
+      POSTGRES_DB: thumbnail_generator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint

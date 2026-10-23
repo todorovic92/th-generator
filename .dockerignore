@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.example
+data
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+**/*.tsbuildinfo
+.DS_Store
